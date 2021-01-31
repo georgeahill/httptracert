@@ -91,7 +91,7 @@
 
         let map = svg.append("g")
 
-        d3.json("/static/world_map.json", function (err, d) {
+        d3.json("/traceroute/static/world_map.json", function (err, d) {
             map.append("g")
                 .attr("class", "countries")
                 .selectAll("path")
@@ -121,7 +121,7 @@
         function begin_trace() {
             ip_addr = document.getElementById("address").value;
 
-            d3.json("/paths?ip=" + ip_addr, function (err, d) {
+            d3.json("/traceroute/paths?ip=" + ip_addr, function (err, d) {
                 svg.selectAll(".deleteme").remove();
                 let hopmap = svg.append("g").attr("class", "deleteme");
 

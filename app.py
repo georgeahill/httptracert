@@ -4,12 +4,12 @@ import traceroute
 app = Flask(__name__)
 
 
-@app.route("/")
+@app.route("/traceroute")
 def index():
     return render_template("index.html")
 
 
-@app.route("/paths")
+@app.route("/traceroute/paths")
 def paths():
     ip_addr = request.args.get("ip")
 
