@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request, jsonify
 import traceroute
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/traceroute/static')
+
+
 
 
 @app.route("/traceroute")
