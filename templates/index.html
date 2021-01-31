@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        button {
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+        }
+
+        .button1 {
+            background-color: #4CAF50;
+        }
+
+        .button2 {
+            background-color: #008CBA;
+        }
+
+        input[type=text] {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="text" placeholder="Destination" id="address" />
+    <button class="button1" type="button" onclick="begin_trace();">Trace Route</button>
+    <div id="map" style="width: 100%;"></div>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://d3js.org/topojson.v1.min.js"></script>
+    <script>
+
+        let width = d3.select("#map").node().getBoundingClientRect().width
+        let height = 900
+        const sensitivity = 75
+
+        let projection = d3.geoOrthographic()
+            .scale(250)
+            .center([0, 0])
+            .rotate([0, -30])
+            .translate([width / 2, height / 2])
+
+
+        const initialScale = projection.scale()
+        let path = d3.geoPath().projection(projection)
+
+        let svg = d3.select("#map")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+
+        let globe = svg.append("circle")
+            .attr("fill", "#EEE")
+            .attr("stroke", "#000")
+            .attr("stroke-width", "0.2")
+            .attr("cx", width / 2)
+            .attr("cy", height / 2)
+            .attr("r", initialScale)
+
+        svg.call(d3.drag().on('drag', () => {
+            const rotate = projection.rotate()
+            const k = sensitivity / projection.scale()
+            projection.rotate([
+                rotate[0] + d3.event.dx * k,
+                rotate[1] - d3.event.dy * k
+            ])
+            path = d3.geoPath().projection(projection)
+            svg.selectAll("path").attr("d", path)
+        }))
+            .call(d3.zoom().on('zoom', () => {
+                if (d3.event.transform.k > 0.3) {
+                    projection.scale(initialScale * d3.event.transform.k)
+                    path = d3.geoPath().projection(projection)
+                    svg.selectAll("path").attr("d", path)
+                    globe.attr("r", projection.scale())
+                }
+                else {
+                    d3.event.transform.k = 0.3
+                }
+            }))
+
+        let map = svg.append("g")
+
+        d3.json("/static/world_map.json", function (err, d) {
+            map.append("g")
+                .attr("class", "countries")
+                .selectAll("path")
+                .data(d.features)
+                .enter().append("path")
+                .attr("class", d => "country_" + d.properties.name.replace(" ", "_"))
+                .attr("d", path)
+                .attr("fill", "white")
+                .style('stroke', 'black')
+                .style('stroke-width', 0.3)
+                .style("opacity", 0.8)
+        })
+
+        //Optional rotate
+        // d3.timer(function (elapsed) {
+        //     const rotate = projection.rotate()
+        //     const k = sensitivity / projection.scale()
+        //     projection.rotate([
+        //         rotate[0] - 1 * k,
+        //         rotate[1]
+        //     ])
+        //     path = d3.geoPath().projection(projection)
+        //     svg.selectAll("path").attr("d", path)
+        // }, 200)
+
+
+        function begin_trace() {
+            ip_addr = document.getElementById("address").value;
+
+            d3.json("/paths?ip=" + ip_addr, function (err, d) {
+                svg.selectAll(".deleteme").remove();
+                let hopmap = svg.append("g").attr("class", "deleteme");
+
+                var myColor = d3.scaleLinear().domain([3, 8])
+                    .range(["green", "red"]);
+
+
+                console.log(d);
+                hopmap.append("g")
+                    .attr("class", "hops")
+                    .selectAll("path")
+                    .data(d.features)
+                    .enter().append("path")
+                    .attr("class", d => "hop_" + d.properties.name.replace(" ", "_"))
+                    .attr("d", path)
+                    // .attr("fill", "black")
+                    .style("stroke", function (d) { return myColor(parseInt(d.properties.name)); })
+                    .style("stroke-width", 0.8)
+                    .style("opacity", 1)
+                    .style("z-index", 1);
+
+                alert(d.hops + " hops!");
+            })
+        }
+
+    </script>
+</body>
+
+</html>

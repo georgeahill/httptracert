@@ -1,0 +1,4 @@
+__pycache__
+static/locations.json
+static/world_110m.json
+static/test_paths.json
